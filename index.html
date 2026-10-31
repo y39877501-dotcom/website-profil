@@ -227,7 +227,7 @@
             banner: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop"
         };
 
-        let isAdmin = false;
+        var isAdmin = false;
         // PIN Rahasia Default buat Masuk Mode Edit
         const ADMIN_PIN = "1234";
 
@@ -452,5 +452,79 @@
             document.getElementById('custom-modal').classList.add('hidden');
         }
     </script>
+    <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAoyceMTRm4V3LjVZ_gmjK2dPel9BWZ18",
+  authDomain: "piqri-profile1.firebaseapp.com",
+  projectId: "piqri-profile1",
+  storageBucket: "piqri-profile1.firebasestorage.app",
+  messagingSenderId: "69537616080",
+  appId: "1:69537616080:web:193532ea41be3ccdc20ed5"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+        window.checkAdminPass = async function() {
+    if (auth.currentUser) {
+        await signOut(auth);
+        window.isAdmin = false;
+        toggleEditMode(false);
+        document.getElementById('lock-icon').className =
+            'fa-solid fa-lock text-sm';
+        return;
+    }
+
+    showModal('Login Owner', `
+        <input type="email" id="owner-email"
+        placeholder="Email owner"
+        class="w-full bg-neutral-900 border border-[#D1D5DB]/40 rounded-lg p-2.5 text-white text-sm mb-2">
+
+        <input type="password" id="owner-password"
+        placeholder="Password"
+        class="w-full bg-neutral-900 border border-[#D1D5DB]/40 rounded-lg p-2.5 text-white text-sm">
+    `, [
+        {
+            text: 'Batal',
+            class: 'bg-neutral-800 text-white px-3 py-1.5 rounded-lg text-xs',
+            onclick: 'closeModal()'
+        },
+        {
+            text: 'Masuk',
+            class: 'bg-white text-black px-4 py-1.5 rounded-lg text-xs',
+            onclick: 'loginOwner()'
+        }
+    ]);
+};
+
+window.loginOwner = async function() {
+    const email = document.getElementById('owner-email').value;
+    const password = document.getElementById('owner-password').value;
+
+    try {
+        const credential = await signInWithEmailAndPassword(auth, email, password);
+
+        if (credential.user.uid !== "MNtf9VtNaObDxye3HhDym9Crre72") {
+            await signOut(auth);
+            throw new Error("Bukan akun owner");
+        }
+
+        window.isAdmin = true;
+        document.getElementById('lock-icon').className =
+            'fa-solid fa-lock-open text-sm text-white';
+
+        closeModal();
+        populateForm();
+        toggleEditMode(true);
+    } catch (error) {
+        showModal('Login Gagal',
+            '<p class="text-sm text-red-400">Login gagal atau akun bukan owner.</p>');
+    }
+};
+</script>
 </body>
 </html>
