@@ -226,7 +226,13 @@
             avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=500&auto=format&fit=crop",
             banner: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop"
         };
+        
+window.getProfileData = () => profileData;
 
+window.setProfileData = (data) => {
+    profileData = { ...profileData, ...data };
+    renderProfile();
+};
         var isAdmin = false;
         // PIN Rahasia Default buat Masuk Mode Edit
         const ADMIN_PIN = "1234";
