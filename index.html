@@ -238,11 +238,18 @@ window.setProfileData = (data) => {
         const ADMIN_PIN = "1234";
 
         // Inisialisasi Saat Halaman Dimuat
-        window.onload = function() {
-            document.getElementById('year').innerText = new Date().getFullYear();
-            loadProfileData();
-            renderProfile();
-        };
+        window.onload = async function() {
+    document.getElementById('year').innerText = new Date().getFullYear();
+
+    loadProfileData();
+    renderProfile();
+
+    try {
+        await window.loadProfileFromCloud();
+    } catch (error) {
+        console.error("Gagal mengambil data Firebase:", error);
+    }
+};
 
         // Render Data ke Tampilan Website
         function renderProfile() {
@@ -359,26 +366,31 @@ window.setProfileData = (data) => {
         }
 
         // Simpan Perubahan Profil
-        function saveProfileData() {
-            profileData.name = document.getElementById('input-name').value;
-            profileData.category = document.getElementById('input-category').value;
-            profileData.bio = document.getElementById('input-bio').value;
-            profileData.location = document.getElementById('input-location').value;
-            profileData.email = document.getElementById('input-email').value;
+        async function saveProfileData() {
+    profileData.name = document.getElementById('input-name').value;
+    profileData.category = document.getElementById('input-category').value;
+    profileData.bio = document.getElementById('input-bio').value;
+    profileData.location = document.getElementById('input-location').value;
+    profileData.email = document.getElementById('input-email').value;
 
-            profileData.socials.wa = document.getElementById('input-wa').value;
-            profileData.socials.ig = document.getElementById('input-ig').value;
-            profileData.socials.tiktok = document.getElementById('input-tiktok').value;
-            profileData.socials.web = document.getElementById('input-[#D1D5DB]web').value;
+    profileData.socials.wa = document.getElementById('input-wa').value;
+    profileData.socials.ig = document.getElementById('input-ig').value;
+    profileData.socials.tiktok = document.getElementById('input-tiktok').value;
+    profileData.socials.web = document.getElementById('input-[#D1D5DB]web').value;
 
-            saveDataToStorage();
-            renderProfile();
-            toggleEditMode(false);
+    saveDataToStorage();
+    renderProfile();
+    toggleEditMode(false);
 
-            showModal('Sukses', '<p class="text-sm text-[#D1D5DB]">Data profil elo berhasil diupdate!</p>');
-        }
-
-        // Trigger Upload Gambar
+    try {
+        await window.saveProfileToCloud();
+        showModal('Sukses', '<p class="text-sm text-[#D1D5DB]">Profil berhasil disimpan online!</p>');
+    } catch (error) {
+        console.error(error);
+        showModal('Gagal', '<p class="text-sm text-red-400">Gagal menyimpan ke Firebase. Coba lagi.</p>');
+    }
+}
+         // Trigger Upload Gambar
         function triggerBannerUpload() {
             if (!isAdmin) {
                 showModal('Akses Terbatas', '<p class="text-sm text-[#D1D5DB]">Klik tombol kunci gembok di pojok kiri atas dulu bro biar bisa edit foto.</p>');
@@ -429,7 +441,7 @@ window.setProfileData = (data) => {
 
         // Custom Modal pengganti alert()
         function showModal(title, bodyHtml, actions = null) {
-            document.getElementById('modal-title').innerText = title;
+            document.getElementBgetamodal-title').innerText = title;
             document.getElementById('modal-body').innerHTML = bodyHtml;
 
             const actionsContainer = document.getElementById('modal-actions');
@@ -440,7 +452,7 @@ window.setProfileData = (data) => {
                     const button = document.createElement('button');
                     button.className = btn.class;
                     button.innerText = btn.text;
-                    button.setAttribute('onclick', btn.onclick);
+                setAttribute('onclick', btn.onclick);
                     actionsContainer.appendChild(button);
                 });
             } else {
@@ -475,6 +487,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+        window.saveProfileToCloud = async function() {
+    const data = window.getProfileData();
+
+    // Hindari mengirim gambar base64 ke Firestore
+    if (data.avatar?.startsWith("data:")) delete data.avatar;
+    if (data.banner?.startsWith("data:")) delete data.banner;
+
+    await setDoc(doc(db, "profiles", "main"), data);
+};
+
+window.loadProfileFromCloud = async function() {
+    const snapshot = await getDoc(doc(db, "profiles", "main"));
+
+    if (snapshot.exists()) {
+        window.setProfileData(snapshot.data());
+    }
+};
         window.checkAdminPass = async function() {
     if (auth.currentUser) {
         await signOut(auth);
